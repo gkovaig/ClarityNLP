@@ -1,4 +1,4 @@
-FROM solr:6.6.4
+FROM solr:6.6.6
 
 COPY precreate-core /opt/docker-solr/scripts/precreate-core
 COPY solrconfig.xml /solrconfig.xml

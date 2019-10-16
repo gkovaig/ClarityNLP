@@ -43,7 +43,8 @@ if [[ ! -d $coredir ]]; then
     cp /solrconfig.xml "$coredir/conf"
     echo created custom solrconfig.xml
 
-    start-local-solr
+#    start-local-solr
+    /opt/solr/bin/solr start -f -z zoo1:2181,zoo2:2182
 
     sleep 20
     # Now configure with the Schema API

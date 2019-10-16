@@ -114,7 +114,8 @@ services:
       - clarity
     depends_on:
       - redis
-      - nlp-solr
+      - nlp-solr1
+      - nlp-solr2
       - nlp-mongo
       - nlp-postgres
       - luigid
@@ -140,23 +141,70 @@ services:
       - identity-provider:identity-provider
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/api`)"
+      - "traefik.http.routers.app.rule=PathPrefix(`/luigi`,`/idp`,`/solr`,`/solr2`,`/api`)"
       - "traefik.http.routers.app.entrypoints=web"
       - "traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=10000000000"
       - "traefik.http.routers.app.middlewares=limit"
     networks:
       - clarity
 
-  nlp-solr:
-    container_name: NLP_SOLR
+  nlp-solr1:
+    container_name: NLP_SOLR1
     hostname: ${NLP_SOLR_HOSTNAME}
     build: ./utilities/nlp-solr
-    expose:
-      - ${NLP_SOLR_CONTAINER_PORT}
+    ports:
+      - 8981:${NLP_SOLR_CONTAINER_PORT}
     volumes:
       - nlp-solrdata:/opt/solr/server/solr/mycores
     environment:
       - SOLR_HEAP=${SOLR_HEAP}
+      - ZK_HOST=zoo1:2181,zoo2:2181
+    depends_on:
+      - zoo1
+      - zoo2
+    networks:
+      - clarity
+
+  nlp-solr2:
+    container_name: NLP_SOLR2
+    hostname: ${NLP_SOLR_HOSTNAME}
+    build: ./utilities/nlp-solr
+    ports:
+      - 8982:${NLP_SOLR_CONTAINER_PORT}
+    volumes:
+      - nlp-solrdata:/opt/solr/server/solr/mycores
+    environment:
+      - SOLR_HEAP=${SOLR_HEAP}
+      - ZK_HOST=zoo1:2181,zoo2:2181
+    depends_on:
+      - zoo1
+      - zoo2
+    networks:
+      - clarity
+
+  zoo1:
+    image: zookeeper:3.4
+    container_name: ZOO1
+    restart: always
+    hostname: zoo1
+    ports:
+      - 2181:2181
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888
+    networks:
+      - clarity
+
+  zoo2:
+    image: zookeeper:3.4
+    container_name: ZOO2
+    restart: always
+    hostname: zoo2
+    ports:
+      - 2182:2181
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zoo1:2888:3888 server.2=zoo2:2888:3888
     networks:
       - clarity
 
@@ -244,7 +292,8 @@ services:
     depends_on:
       - ingest-mongo
       - redis
-      - nlp-solr
+      - nlp-solr1
+      - nlp-solr2
       - nlp-api
     labels:
       - "traefik.enable=true"
